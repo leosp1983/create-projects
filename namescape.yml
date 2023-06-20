@@ -1,0 +1,37 @@
+---
+- hosts: localhost
+  gather_facts: no
+  vars:
+    ansible_user: "{{user}}"
+    ansible_ssh_pass: "{{pass}}"
+
+  tasks:
+
+    - include_role:
+        name: ns_openshift
+
+    - include_role:
+        name: win_domain_group
+      vars:
+        ansible_connection: winrm
+        ansible_host: <server>
+        ansible_winrm_user: "{{userad}}"
+        ansible_winrm_password: "{{passad}}"
+        ansible_winrm_port: 5985
+        ansible_winrm_server_cert_validation: ignore
+    
+    - name: Pause para replicação do grupo criado em todos domain controllers
+      ansible.builtin.pause:
+        minutes: 1
+
+    - include_role:
+        name: ldap_sync
+
+    - name: pause para o sync do projeto com o quay 
+      ansible.builtin.pause:
+        minutes: 1
+
+    - include_role:
+        name: quay
+      vars:
+        win_domain_group_ocpdh: "{{group}}"
